@@ -1,4 +1,5 @@
 import { google } from "googleapis";
+import { Readable } from "stream";
 
 export const config = {
   api: { bodyParser: { sizeLimit: "12mb" } }
@@ -19,17 +20,11 @@ export default async function handler(req, res) {
     const folderId = process.env.DRIVE_FOLDER_ID;
 
     if (!imageBase64 || !filename) {
-      return res.status(400).json({
-        ok: false,
-        error: "Missing imageBase64 / filename"
-      });
+      return res.status(400).json({ ok: false, error: "Missing imageBase64 / filename" });
     }
 
     if (!folderId) {
-      return res.status(500).json({
-        ok: false,
-        error: "Missing DRIVE_FOLDER_ID env var"
-      });
+      return res.status(500).json({ ok: false, error: "Missing DRIVE_FOLDER_ID env var" });
     }
 
     const creds = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
@@ -52,7 +47,7 @@ export default async function handler(req, res) {
       },
       media: {
         mimeType: "image/jpeg",
-        body: buffer
+        body: Readable.from(buffer)   // ✅ AQUI EL CAMBIO
       },
       fields: "id,name"
     });
@@ -62,11 +57,9 @@ export default async function handler(req, res) {
       fileId: response.data.id,
       name: response.data.name
     });
+
   } catch (error) {
     console.error(error);
-    return res.status(500).json({
-      ok: false,
-      error: "Upload failed"
-    });
+    return res.status(500).json({ ok: false, error: "Upload failed" });
   }
 }
