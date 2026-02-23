@@ -15,23 +15,6 @@ export default async function handler(req, res) {
   }
 
   try {
-import { google } from "googleapis";
-
-export const config = {
-  api: { bodyParser: { sizeLimit: "12mb" } }
-};
-
-export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-
-  if (req.method === "OPTIONS") return res.status(200).end();
-  if (req.method !== "POST") {
-    return res.status(405).json({ ok: false, error: "Method not allowed" });
-  }
-
-  try {
     const { imageBase64, filename } = req.body || {};
     const folderId = process.env.DRIVE_FOLDER_ID;
 
@@ -79,27 +62,6 @@ export default async function handler(req, res) {
       fileId: response.data.id,
       name: response.data.name
     });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      ok: false,
-      error: "Upload failed"
-    });
-  }
-}
-      },
-      media: {
-        mimeType: "image/jpeg",
-        body: buffer
-      },
-      fields: "id,name"
-    });
-
-    return res.status(200).json({
-      ok: true,
-      fileId: response.data.id
-    });
-
   } catch (error) {
     console.error(error);
     return res.status(500).json({
