@@ -17,7 +17,12 @@ export default async function handler(req, res) {
 
   try {
     const { imageBase64, filename } = req.body || {};
+
     const folderId = process.env.DRIVE_FOLDER_ID;
+
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
 
     if (!imageBase64 || !filename) {
       return res.status(400).json({ ok: false, error: "Missing imageBase64 / filename" });
@@ -27,13 +32,15 @@ export default async function handler(req, res) {
       return res.status(500).json({ ok: false, error: "Missing DRIVE_FOLDER_ID env var" });
     }
 
-    const creds = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
+    if (!clientId || !clientSecret || !refreshToken) {
+      return res.status(500).json({
+        ok: false,
+        error: "Missing GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GOOGLE_REFRESH_TOKEN env vars"
+      });
+    }
 
-    const auth = new google.auth.JWT({
-      email: creds.client_email,
-      key: creds.private_key,
-      scopes: ["https://www.googleapis.com/auth/drive.file"]
-    });
+    const auth = new google.auth.OAuth2(clientId, clientSecret, "http://localhost");
+    auth.setCredentials({ refresh_token: refreshToken });
 
     const drive = google.drive({ version: "v3", auth });
 
@@ -47,7 +54,7 @@ export default async function handler(req, res) {
       },
       media: {
         mimeType: "image/jpeg",
-        body: Readable.from(buffer)   // ✅ AQUI EL CAMBIO
+        body: Readable.from(buffer)
       },
       fields: "id,name"
     });
@@ -57,7 +64,6 @@ export default async function handler(req, res) {
       fileId: response.data.id,
       name: response.data.name
     });
-
   } catch (error) {
     console.error(error);
     return res.status(500).json({ ok: false, error: "Upload failed" });
